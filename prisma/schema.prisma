@@ -1,0 +1,71 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model classes {
+  class_id   Int        @id @default(autoincrement())
+  class_name String?    @db.VarChar(50)
+  courses    courses[]
+  students   students[]
+}
+
+model courses {
+  course_id   Int       @id @default(autoincrement())
+  course_name String?   @db.VarChar(50)
+  teacher_id  Int?
+  class_id    Int?
+  teachers    teachers? @relation(fields: [teacher_id], references: [teacher_id], onDelete: Restrict, onUpdate: Restrict, map: "courses_ibfk_1")
+  classes     classes?  @relation(fields: [class_id], references: [class_id], onDelete: Restrict, onUpdate: Restrict, map: "courses_ibfk_2")
+  grades      grades[]
+
+  @@index([class_id], map: "fk_courses_classes")
+  @@index([teacher_id], map: "fk_courses_teachers")
+}
+
+model grades {
+  student_id Int
+  course_id  Int
+  grade      Int?
+  courses    courses  @relation(fields: [course_id], references: [course_id], onUpdate: Restrict, map: "fk_grades_courses")
+  students   students @relation(fields: [student_id], references: [student_id], onUpdate: Restrict, map: "fk_grades_students")
+
+  @@id([student_id, course_id])
+  @@index([course_id], map: "fk_grades_courses")
+}
+
+model students {
+  student_id Int              @id @default(autoincrement())
+  first_name String?          @db.VarChar(50)
+  last_name  String?          @db.VarChar(50)
+  gender     students_gender?
+  class_id   Int?
+  email      String?          @unique(map: "unique_email_students") @db.VarChar(255)
+  grades     grades[]
+  classes    classes?         @relation(fields: [class_id], references: [class_id], onDelete: Restrict, onUpdate: Restrict, map: "fk_students_classes")
+
+  @@index([class_id], map: "fk_students_classes")
+}
+
+model teachers {
+  teacher_id Int              @id @default(autoincrement())
+  first_name String?          @db.VarChar(50)
+  last_name  String?          @db.VarChar(50)
+  gender     teachers_gender?
+  email      String?          @unique(map: "unique_email_teachers") @db.VarChar(255)
+  courses    courses[]
+}
+
+enum students_gender {
+  F
+  M
+}
+
+enum teachers_gender {
+  F
+  M
+}
