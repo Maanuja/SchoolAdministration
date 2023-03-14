@@ -185,7 +185,7 @@ var resolvers = {
             if (classe){
                 return await prisma.classes.update({
                     where: { 
-                        class_id : classe.class_id,
+                        class_id : id 
                     }, 
                     data: { 
                         class_name : class_name 
@@ -193,7 +193,7 @@ var resolvers = {
                 });
             }
     
-            return await prisma.classes.create({ class_name });
+            return await prisma.classes.create({ data : { class_name : class_name } });
         },
         deleteClasse: async ({ id }) => {
             return  await prisma.classes.delete({ where: {class_id : id } });
