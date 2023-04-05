@@ -4,11 +4,132 @@ import express from 'express';
 
 import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient({
+    // log: [ 'query', 'info', 'warn'],
+})
+  
 
 let app = express();
 
 // Construct a schema, using GraphQL schema language
+// let schema = buildSchema(`
+//     type Students {
+//         student_id: Int!
+//         first_name: String!
+//         last_name: String!
+//         gender: gender!
+//         class_id: Int!
+//         email: String!
+//         class: Classes
+//         grades: [Grades]
+//     }
+
+//     input StudentInput {
+//         first_name: String!
+//         last_name: String!
+//         gender: gender!
+//         class_id: Int!
+//         email: String!
+//     }
+
+//     type Classes {
+//         class_id: Int!
+//         class_name: String!
+//         courses: [Courses]
+//         students: [Students]
+//     }
+
+//     type Courses {
+//         course_id: Int!
+//         course_name: String!
+//         teacher_id: Int!
+//         class_id: Int!
+//         teacher: Teachers
+//         class: Classes
+//         grades: [Grades]
+//     }
+
+//     input CourseInput {
+//         course_name: String!
+//         teacher_id: Int!
+//         class_id: Int!
+//     }
+    
+//     type Teachers {
+//         teacher_id: Int!
+//         first_name: String!
+//         last_name: String!
+//         gender: gender!
+//         email: String!
+//         courses: [Courses]
+//     }
+
+//     input TeacherInput {
+//         first_name: String!
+//         last_name: String!
+//         gender: gender!
+//         email: String!
+//     }
+
+//     type Grades {
+//         student_id: Int!
+//         course_id: Int!
+//         grade: Int
+//         student: Students
+//         course: Courses
+//     }
+
+//     input GradeInput {
+//         student_id: Int!
+//         course_id: Int!
+//         grade: Int
+//     }
+
+//     input GradeIdInput {
+//         student_id: Int!
+//         course_id: Int!
+//     } 
+
+//     enum gender {
+//         F
+//         M
+//     }
+
+//     type Query {
+//         students: [Students]
+//         student(id: Int!): Students
+
+//         teachers: [Teachers]
+//         teacher(id: Int!): Teachers
+        
+//         classes: [Classes]
+//         classe(id: Int!): Classes
+
+//         courses: [Courses]
+//         course(id: Int!): Courses
+
+//         grades: [Grades]
+//         grade(id: Int!): Grades
+//     }
+
+//     type Mutation {
+//         createOrUpdateStudent(data: StudentInput!): Students
+//         deleteStudent(id: Int!): Students
+
+//         createOrUpdateClasse(class_name: String!): Classes
+//         deleteClasse(id: Int!): Boolean
+
+//         createOrUpdateTeacher(data: TeacherInput!): Teachers
+//         deleteTeacher(id: Int!): Boolean
+    
+//         createCourse(data: CourseInput!): Courses
+//         updateCourse(id: Int!, data: CourseInput!): Courses
+//         deleteCourse(id: Int!): Boolean
+    
+//         createOrUpdateGrade(data: GradeInput!): Grades
+//         deleteGrade(data: GradeIdInput!): Boolean
+//     }
+// `);
 let schema = buildSchema(`
     type Students {
         student_id: Int!
@@ -17,7 +138,7 @@ let schema = buildSchema(`
         gender: gender!
         class_id: Int!
         email: String!
-        class: Classes
+        classes: Classes
         grades: [Grades]
     }
 
@@ -41,8 +162,8 @@ let schema = buildSchema(`
         course_name: String!
         teacher_id: Int!
         class_id: Int!
-        teacher: Teachers
-        class: Classes
+        teachers: Teachers
+        classes: Classes
         grades: [Grades]
     }
 
@@ -72,7 +193,7 @@ let schema = buildSchema(`
         student_id: Int!
         course_id: Int!
         grade: Int
-        student: Students
+        students: Students
         course: Courses
     }
 
@@ -95,7 +216,8 @@ let schema = buildSchema(`
     type Query {
         students: [Students]
         student(id: Int!): Students
-
+        getAllGradesOfStudent(id: Int!): Courses
+        getAverageGradeOfStudent( id: Int!): Float
         teachers: [Teachers]
         teacher(id: Int!): Teachers
         
@@ -104,14 +226,15 @@ let schema = buildSchema(`
 
         courses: [Courses]
         course(id: Int!): Courses
+        getAllgradesfromCourse(name : String!): Courses
+        getAllclassesforCourse(name : String!): Courses
 
         grades: [Grades]
-        grade(id: Int!): Grades
     }
 
     type Mutation {
         createOrUpdateStudent(data: StudentInput!): Students
-        deleteStudent(id: Int!): Students
+        deleteStudent(id: Int!): Boolean
 
         createOrUpdateClasse(class_name: String!): Classes
         deleteClasse(id: Int!): Boolean
@@ -128,30 +251,50 @@ let schema = buildSchema(`
     }
 `);
 
-
 // The rootValue provides a resolver function for each API endpoint
 var resolvers = {
         students: async () => {
-          return await prisma.students.findMany();
+            return await prisma.students.findMany({
+                include: {
+                    classes: true,
+                    grades: true,
+                },
+            });
         },
         student: async ({ id }) => {
             return await prisma.students.findFirst({ 
                 where: { 
                     student_id: id 
-                } 
+                },
+                include: {
+                    classes: true,
+                    grades: true,
+                }
             });
         },
         createOrUpdateStudent: async ({ data }) => {
             const student = await prisma.students.findFirst({
                 where: { email : data.email }
             })
-            if (student) return await prisma.students.update({ 
-                where: { 
-                    student_id: student.student_id, 
+            if (student) {
+                console.log(`Student info updated for student ${student.student_id}`)
+                return await prisma.students.update({ 
+                    where: { 
+                        student_id: student.student_id, 
+                    },
+                    include: {
+                        classes: true
+                    },
+                    data
+                });
+            }
+            console.log(`Student info created for student ${data.last_name} ${data.first_name}`)
+            return await prisma.students.create({ 
+                include: {
+                    classes: true
                 },
                 data
             });
-            return await prisma.students.create({ data });
         },
         deleteStudent: async ({ id }) => {
             try {
@@ -167,13 +310,20 @@ var resolvers = {
         },
 
         classes: async () => {
-            return await prisma.classes.findMany();
+            return await prisma.classes.findMany({
+                include: {
+                    courses : true
+                }
+            });
         },
         classe: async ({ id }) => {
             return await prisma.classes.findFirst({
                 where: { 
                     class_id: id 
-                } 
+                },
+                include: {
+                    courses: true
+                }
             });
         },
         createOrUpdateClasse: async  ({ class_name }) => {
@@ -183,43 +333,141 @@ var resolvers = {
                 }
             })
             if (classe){
+                console.log(`Classe ${classe.class_name} is updated to ${class_name}`);
                 return await prisma.classes.update({
                     where: { 
-                        class_id : id 
-                    }, 
+                        class_id : classe.class_id
+                    },
+                    include: {
+                        courses : true
+                    },
                     data: { 
-                        class_name : class_name 
+                        class_name, 
                     }
                 });
             }
-    
-            return await prisma.classes.create({ data : { class_name : class_name } });
+            console.log(`Classe ${class_name} is created`);
+            return await prisma.classes.create({ 
+                include: {
+                    courses: true,
+                },
+                data: { 
+                    class_name
+                } 
+            });
         },
         deleteClasse: async ({ id }) => {
-            return  await prisma.classes.delete({ where: {class_id : id } });
+            try {
+                const deleteClasse = await prisma.classes.delete({ 
+                    where: {class_id : id } 
+                })
+                return true
+            } catch (error) {
+                return false
+            }
         },
 
         courses: async () => {  
-            return await prisma.courses.findMany();
+            return await prisma.courses.findMany({
+                include: {
+                    teachers: true,
+                    classes: true,
+                    grades: {
+                        include: {
+                            students: true
+                        }   
+                    }
+                }
+            });
         },
+
+        getAllclassesforCourse: async ({ name }) => {
+            const course =  await prisma.courses.findFirst({
+                where: {
+                    course_name : name
+                }
+            })
+            return await prisma.courses.findFirst({
+                where: {
+                    course_id : course.id
+                },
+                include: {
+                    classes : true,
+                }
+            });
+        },
+
+        getAllgradesfromCourse: async ({ name }) => {
+            const course =  await prisma.courses.findFirst({
+                where: {
+                    course_name : name
+                }
+            })
+            return await prisma.courses.findFirst({
+                where: {
+                    course_id : course.id
+                },
+                include: {
+                    grades: {
+                        include: {
+                            students: true
+                        }   
+                    }
+                }
+            });
+        },
+
         course: async ({id}) => {
             return await prisma.courses.findFirst({
                 where: {
                     course_id : id
+                },
+                include: {
+                    teachers: true,
+                    classes: true,
+                    grades: {
+                        include: {
+                            students: true
+                        }   
+                    }
                 }
             })
         }, 
+        
         createCourse: async ({ data }) => {
-            return await prisma.courses.create({ data });
-        },
+            const { course_name, teacher_id, class_id } = data;
+            try {
+              const createdCourse = await prisma.courses.create({
+                include: {
+                    classes : true,
+                    teachers : true
+                },
+                data: {
+                  course_name,
+                  teacher_id,
+                  class_id
+                }
+              });
+              return createdCourse;
+            } catch (error) {
+              console.error(error);
+              return null;
+            }
+          }
+,          
         updateCourse: async ({ id , data }) => {
             return await prisma.courses.update({ 
                 where: { 
                     course_id : id 
                 },
+                include: {
+                    teachers : true,
+                    classes: true
+                },
                 data
             });
         },
+        
         deleteCourse: async ({ id }) => {
             try {
                 const deleteCourse = await prisma.courses.delete({ 
@@ -234,12 +482,19 @@ var resolvers = {
         },
 
         teachers: async () => {
-            return await prisma.teachers.findMany();
+            return await prisma.teachers.findMany({
+                include: {
+                    courses: true,
+                }
+            });
         },
         teacher: async ({id }) => {
             return await prisma.teachers.findFirst({
                 where: {
                     teacher_id: id
+                },
+                include: {
+                    courses: true,
                 }
             });
         },
@@ -248,6 +503,9 @@ var resolvers = {
             const teacher = await prisma.teachers.findFirst({
                 where: {
                     email : email,
+                },
+                include: {
+                    courses: true,
                 }
             });
 
@@ -256,10 +514,18 @@ var resolvers = {
                     where: {
                         teacher_id: teacher.teacher_id,
                     },
+                    include: {
+                        courses: true,
+                    },
                     data
                 });
             }
-            return await prisma.teachers.create({ data });
+            return await prisma.teachers.create({
+                include: {
+                    courses: true,
+                },
+                data 
+            });
         },
         deleteTeacher: async ({ id }) => {
             try {
@@ -276,13 +542,6 @@ var resolvers = {
 
         grades: async () => {
             return await prisma.grades.findMany();
-        },
-        grade: async ({id}) => {
-            return await prisma.grades.findFirst({
-                where: {
-                    grade_id: id,
-                }
-            });
         },
         createOrUpdateGrade: async ( {data}) => {
             try {
@@ -342,7 +601,56 @@ var resolvers = {
                 console.error(error)
                 return false
               }
-        }
+        },
+
+
+        getAverageGradeByClassIdforCourse: async ({ classId, courseName }) => {
+
+            const classe = await prisma.classes.findFirst({
+                where: { 
+                    class_id : classId
+                }
+            });
+
+            const grades = await prisma.courses.findMany({
+                where: {
+                    class_id: student.class_id
+                }, 
+                include: {
+                    grades: true
+                }
+            });
+            console.log(grades);
+
+            return grades;
+        },
+
+        getAllGradesOfStudent: async ({ studentId }) => {
+            return await prisma.students.findMany({
+                where: {
+                  student_id : studentId,
+                },
+                include: {
+                  grades: true,
+                },
+              });
+        },
+
+        getAverageGradeOfStudent: async ({ studentId }) => {
+            const grades = await prisma.grades.findMany({
+                student_id : studentId
+            })
+
+            var sumGrades = 0;
+            
+            grades.forEach(grade => {
+                sumGrades += parseInt(grade.grade);
+            });
+
+            const averageGrade = sumGrades / grades.length;
+
+            return averageGrade;
+        }         
 };
 
 

@@ -16,7 +16,7 @@ model classes {
 
 model courses {
   course_id   Int       @id @default(autoincrement())
-  course_name String?   @db.VarChar(50)
+  course_name String?   @unique(map: "course_name") @db.VarChar(50)
   teacher_id  Int?
   class_id    Int?
   teachers    teachers? @relation(fields: [teacher_id], references: [teacher_id], onDelete: Restrict, onUpdate: Restrict, map: "courses_ibfk_1")
