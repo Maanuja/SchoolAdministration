@@ -21,22 +21,40 @@ Technologies utilisées :
 ## Comment utiliser ce projet :
 
 Clonez le repository GitHub dans votre ordinateur
-Installez les dépendances en exécutant la commande "npm install" dans le terminal
+Installez les dépendances en exécutant la commande `npm install` dans le terminal
 Modifiez les informations de connexion à la base de données dans le fichier ".env"
-Créez la base de données en exécutant la commande "npx prisma db push" dans le terminal
+Importer le ficher schooladministrator.sql dans votre base de données (ici mysql)
+Créez récupérer la base de donnée en exécutant la commande `npx prisma db pull` dans le terminal
 Générez les fichiers pour le serveur GraphQL en exécutant la commande "npx prisma generate" dans le terminal
 Démarrez le serveur en exécutant la commande "npx nodemon server.js" dans le terminal
 Accédez à l'interface graphique de GraphQL en ouvrant un navigateur et en allant sur http://localhost:3456/schooladministration
 
 ## Fonctionnalités actuelles :
 
-- Ajout d'une classe
-- Ajout d'un cours à une classe
-- Ajout d'un étudiant à une classe
-- Ajout d'un enseignant
-- Ajout d'une note pour un étudiant dans un cours donné
-- Modification d'une note pour un étudiant dans un cours donné
-- Suppression d'une note pour un étudiant dans un cours donné
+Gestion des étudiants :
+
+- Récupération de tous les étudiants, avec leurs informations de base ainsi que les classes et les notes associées.
+- Récupération d'un étudiant spécifique en utilisant son identifiant.
+- Création ou mise à jour d'un étudiant avec ses informations de base, y compris les classes associées.
+- Suppression d'un étudiant spécifique en utilisant son identifiant.
+
+Gestion des classes :
+
+- Récupération de toutes les classes, avec les cours associés.
+- Récupération d'une classe spécifique en utilisant son identifiant.
+- Création ou mise à jour d'une classe avec son nom.
+- Suppression d'une classe spécifique en utilisant son identifiant.
+
+Gestion des cours :
+
+- Récupération de tous les cours, avec les enseignants, les classes et les notes associées.
+- Récupération de toutes les classes associées à un cours spécifique en utilisant le nom du cours.
+
+Recupérations des notes:
+
+- Calcul de la note moyenne d'un étudiant spécifique
+- Récupération de toutes les notes d'un étudiant spécifique 
+- Calcul de la note moyenne d'un cours spécifique pour une classe spécifique
 
 ## Limitations actuelles :
 

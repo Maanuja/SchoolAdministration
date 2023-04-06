@@ -1,135 +1,13 @@
 import { graphqlHTTP } from 'express-graphql';
-import { graphql, buildSchema } from 'graphql';
+import { buildSchema } from 'graphql';
 import express from 'express';
 
 import { PrismaClient } from '@prisma/client'
 
-const prisma = new PrismaClient({
-    // log: [ 'query', 'info', 'warn'],
-})
+const prisma = new PrismaClient({})
   
-
 let app = express();
 
-// Construct a schema, using GraphQL schema language
-// let schema = buildSchema(`
-//     type Students {
-//         student_id: Int!
-//         first_name: String!
-//         last_name: String!
-//         gender: gender!
-//         class_id: Int!
-//         email: String!
-//         class: Classes
-//         grades: [Grades]
-//     }
-
-//     input StudentInput {
-//         first_name: String!
-//         last_name: String!
-//         gender: gender!
-//         class_id: Int!
-//         email: String!
-//     }
-
-//     type Classes {
-//         class_id: Int!
-//         class_name: String!
-//         courses: [Courses]
-//         students: [Students]
-//     }
-
-//     type Courses {
-//         course_id: Int!
-//         course_name: String!
-//         teacher_id: Int!
-//         class_id: Int!
-//         teacher: Teachers
-//         class: Classes
-//         grades: [Grades]
-//     }
-
-//     input CourseInput {
-//         course_name: String!
-//         teacher_id: Int!
-//         class_id: Int!
-//     }
-    
-//     type Teachers {
-//         teacher_id: Int!
-//         first_name: String!
-//         last_name: String!
-//         gender: gender!
-//         email: String!
-//         courses: [Courses]
-//     }
-
-//     input TeacherInput {
-//         first_name: String!
-//         last_name: String!
-//         gender: gender!
-//         email: String!
-//     }
-
-//     type Grades {
-//         student_id: Int!
-//         course_id: Int!
-//         grade: Int
-//         student: Students
-//         course: Courses
-//     }
-
-//     input GradeInput {
-//         student_id: Int!
-//         course_id: Int!
-//         grade: Int
-//     }
-
-//     input GradeIdInput {
-//         student_id: Int!
-//         course_id: Int!
-//     } 
-
-//     enum gender {
-//         F
-//         M
-//     }
-
-//     type Query {
-//         students: [Students]
-//         student(id: Int!): Students
-
-//         teachers: [Teachers]
-//         teacher(id: Int!): Teachers
-        
-//         classes: [Classes]
-//         classe(id: Int!): Classes
-
-//         courses: [Courses]
-//         course(id: Int!): Courses
-
-//         grades: [Grades]
-//         grade(id: Int!): Grades
-//     }
-
-//     type Mutation {
-//         createOrUpdateStudent(data: StudentInput!): Students
-//         deleteStudent(id: Int!): Students
-
-//         createOrUpdateClasse(class_name: String!): Classes
-//         deleteClasse(id: Int!): Boolean
-
-//         createOrUpdateTeacher(data: TeacherInput!): Teachers
-//         deleteTeacher(id: Int!): Boolean
-    
-//         createCourse(data: CourseInput!): Courses
-//         updateCourse(id: Int!, data: CourseInput!): Courses
-//         deleteCourse(id: Int!): Boolean
-    
-//         createOrUpdateGrade(data: GradeInput!): Grades
-//         deleteGrade(data: GradeIdInput!): Boolean
-//     }
-// `);
 let schema = buildSchema(`
     type Students {
         student_id: Int!
@@ -218,6 +96,9 @@ let schema = buildSchema(`
         student(id: Int!): Students
         getAllGradesOfStudent(id: Int!): Courses
         getAverageGradeOfStudent( id: Int!): Float
+
+        getAverageGradeByClassIdforCourse(classeID: Int!, courseId: Int!): Float
+
         teachers: [Teachers]
         teacher(id: Int!): Teachers
         
@@ -437,24 +318,23 @@ var resolvers = {
         createCourse: async ({ data }) => {
             const { course_name, teacher_id, class_id } = data;
             try {
-              const createdCourse = await prisma.courses.create({
-                include: {
-                    classes : true,
-                    teachers : true
-                },
-                data: {
-                  course_name,
-                  teacher_id,
-                  class_id
-                }
-              });
-              return createdCourse;
+                const createdCourse = await prisma.courses.create({
+                    include: {
+                        classes : true,
+                        teachers : true
+                    },
+                    data: {
+                        course_name,
+                        teacher_id,
+                        class_id
+                    }
+                });
+                return createdCourse;
             } catch (error) {
-              console.error(error);
-              return null;
+                console.error(error);
+                return null;
             }
-          }
-,          
+        },       
         updateCourse: async ({ id , data }) => {
             return await prisma.courses.update({ 
                 where: { 
@@ -604,25 +484,24 @@ var resolvers = {
         },
 
 
-        getAverageGradeByClassIdforCourse: async ({ classId, courseName }) => {
-
-            const classe = await prisma.classes.findFirst({
-                where: { 
-                    class_id : classId
-                }
-            });
-
-            const grades = await prisma.courses.findMany({
+        getAverageGradeByClassIdforCourse: async ({ classId, courseId }) => {
+            const grades = await prisma.grades.findMany({
                 where: {
-                    class_id: student.class_id
-                }, 
-                include: {
-                    grades: true
-                }
-            });
-            console.log(grades);
-
-            return grades;
+                  course_id: courseId,
+                  students: {
+                    class_id: classId,
+                  },
+                },
+              });
+            
+              const totalGrades = grades.length;
+              let sumGrades = 0;
+              for (const grade of grades) {
+                sumGrades += grade.grade;
+              }
+              const averageGrade = totalGrades > 0 ? sumGrades / totalGrades : 0;
+            
+              return averageGrade;
         },
 
         getAllGradesOfStudent: async ({ studentId }) => {
@@ -647,7 +526,7 @@ var resolvers = {
                 sumGrades += parseInt(grade.grade);
             });
 
-            const averageGrade = sumGrades / grades.length;
+            const averageGrade = grades.length > 0 ? sumGrades / grades.length : 0;
 
             return averageGrade;
         }         
