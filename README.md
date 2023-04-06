@@ -87,3 +87,267 @@ mutation {
   }
 }
 ```
+
+```sh
+query{
+  student (id : 1){
+    last_name
+    classes {
+      class_name
+    }
+    grades{
+      grade
+    }
+  }
+}
+```
+
+```sh
+query {
+  students {
+    student_id
+    first_name
+    last_name
+    gender
+    email
+    classes {
+      class_name
+    }
+  }
+}
+```
+
+```sh
+mutation{
+  createOrUpdateStudent(data: {gender: M, first_name: "Victor", last_name : "Ace", email: "avictor@gmail.com", class_id: 3}  ){
+    student_id
+    last_name
+    first_name
+    classes {
+      class_name
+    }
+  }
+}
+```
+
+```sh
+mutation{
+  deleteStudent (id : 7)
+}
+```
+
+```sh
+query{
+  classes {
+    class_id
+    class_name
+    courses{
+      course_name
+    }
+  }
+}
+```
+
+```sh
+query{
+  classe (id : 1) {
+    class_name
+    courses{
+      course_name
+    }
+  }
+}
+```
+
+```sh
+mutation{
+  createOrUpdateClasse(class_name : "Dev4"){
+   	 class_name
+  }
+}
+```
+
+```sh
+mutation{
+  deleteClasse (id : 4)
+}
+```
+
+```sh
+query {
+  courses {
+    course_name
+    teachers {
+      last_name
+      first_name
+    }
+    classes{
+      class_name
+    }
+    grades{
+      grade
+      students {
+        last_name
+        first_name
+      }
+    }
+  }
+}
+```
+
+```sh
+query{
+  getAllgradesfromCourse (name : "Data"){
+    course_name
+    grades{
+      grade
+      students{
+        last_name
+        first_name
+      }
+    }
+  }
+}
+```
+
+```sh
+query{
+  getAllclassesfromCourse (name : "Data"){
+    course_name
+    classes {
+      class_name
+    }
+  }
+}
+```
+
+```sh
+mutation{
+  createCourse (data : { class_id: 1, teacher_id : 1, course_name : "GrapgQl"}){
+    course_name
+    course_id
+    # teachers {
+    #   first_name
+    # }
+    # classes{
+    #   class_id
+    # }
+  }
+}
+```
+
+```sh
+mutation {
+  createCourse(data: {
+    course_name: "Api",
+    teacher_id: 1,
+    class_id: 1
+  }) {
+    course_id
+    course_name
+    teachers {
+      teacher_id
+      first_name
+      last_name
+    }
+    classes {
+      class_id
+      class_name
+    }
+  }
+}
+```
+
+```sh
+mutation{
+  updateCourse (id : 3 , data : { class_id: 1, teacher_id : 1, course_name : "Devops"}){
+    course_name
+    course_id
+    teachers {
+      first_name
+    }
+    classes{
+      class_id
+    }
+  }
+}
+```
+
+```sh
+mutation{
+ deleteCourse (id :1)
+}
+```
+
+```
+query{
+  teachers{
+    last_name
+    first_name
+    courses{
+      course_name
+    }
+  }
+}
+```
+
+```sh
+query{
+  teacher (id : 2) {
+    last_name
+    first_name
+    courses{
+      course_name
+    }
+  }
+}
+```
+
+```sh
+mutation{
+  createOrUpdateTeacher(data : { first_name: "Lili", last_name :"Petite", gender : F, email : "liliP@gmail.com"}){
+    last_name
+    email
+  }
+}
+```
+
+```
+mutation{
+ deleteTeacher (id :3)
+}
+```
+
+```sh
+mutation{
+  createOrUpdateGrade(data : { course_id: 1, student_id: 1, grade : 13  }){
+  	grade
+  }
+}
+```
+
+```sh
+query{
+  getAllGradesOfStudent (id : 3){
+    students
+  }
+}
+```
+
+```sh
+query{
+  getAverageGradeOfStudent(id : 3)
+}
+```
+
+```sh
+query{
+  getAverageGradeByClassIdforCourse(classeID : 1, courseId: 1)
+}
+```
+
+```sh
+mutation{
+  deleteGrade ( data : { course_id: 1, student_id: 4})
+}
+```
